@@ -6,12 +6,14 @@ import aioodbc.cursor  # noqa: F401
 
 import bot
 from lib.data import ChatCommandArgs, ChatCommand
+from lib.database import DatabaseMain
 
 
 async def getSecretKey(args: ChatCommandArgs) -> Optional[str]:
     query: str = '''SELECT secretKey FROM warp_world WHERE broadcaster=?'''
+    db: DatabaseMain
     cursor: aioodbc.cursor.Cursor
-    async with await args.database.cursor() as cursor:
+    async with DatabaseMain.acquire() as db, await db.cursor() as cursor:
         await cursor.execute(query, (args.chat.channel,))
         row: Optional[Tuple[str]] = await cursor.fetchone()
         if row is not None:

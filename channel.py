@@ -3,18 +3,20 @@
 import aioodbc.cursor  # noqa: F401
 
 from lib.data import ChatCommandArgs
+from lib.database import DatabaseMain
 from lib.helper.chat import min_args, permission
 from . import library
 
 
 @permission('broadcaster')
 async def commandSetWarpWorld(args: ChatCommandArgs) -> bool:
+    db: DatabaseMain
     cursor: aioodbc.cursor.Cursor
-    async with await args.database.cursor() as cursor:
+    async with DatabaseMain.acquire() as db, await db.cursor() as cursor:
         query: str
         params: Tuple[Any, ...]
         if len(args.message) >= 2:
-            if args.database.isSqlite:
+            if db.isSqlite:
                 query = '''
 REPLACE INTO warp_world (broadcaster, secretKey) VALUES (?, ?)
 '''
@@ -33,7 +35,7 @@ INSERT INTO warp_world (broadcaster, secretKey) VALUES (?, ?)
             await cursor.execute(query, (args.chat.channel,))
             args.chat.send('''\
 Warp.World Secret Key is deleted. Warp.World support is disabled.''')
-        await args.database.commit()
+        await db.commit()
     return True
 
 
